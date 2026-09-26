@@ -7,8 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview",
-    "hash-password": "node scripts/hash-password.mjs"
+    "preview": "vite preview"
   },
   "dependencies": {
     "date-fns": "^4.4.0",

@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
-import { Routes, Route, NavLink, useNavigate, Navigate } from 'react-router-dom';
+import { useState, useCallback } from 'react';
+import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen,
   ClipboardCheck, BarChart3, Settings, Bell,
@@ -13,7 +13,6 @@ import Classes      from './pages/Classes.jsx';
 import Attendance   from './pages/Attendance.jsx';
 import Reports      from './pages/Reports.jsx';
 import SettingsPage from './pages/Settings.jsx';
-import Login        from './pages/Login.jsx';
 import Toast        from './components/Toast.jsx';
 
 import { getNotifications, saveNotifications } from './db.js';
@@ -38,37 +37,24 @@ const PAGE_TITLES = {
 };
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const currentUser = {
+    username: 'Administrator',
+    fullName: 'Administrator',
+    role: 'Administrator',
+    avatar: 'AD'
+  };
 
   const [toasts, setToasts] = useState([]);
   const [showNotifs, setShowNotifs] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [notifications, setNotifications] = useState(getNotifications());
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    fetch('/api/auth/session', { credentials: 'include' })
-      .then(response => response.ok ? response.json() : null)
-      .then(data => setCurrentUser(data?.user || null))
-      .catch(() => setCurrentUser(null))
-      .finally(() => setAuthLoading(false));
-  }, []);
-
   const addToast = useCallback((msg, type = 'success') => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, msg, type }]);
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
   }, []);
 
-  const handleLogin = (user) => {
-    setCurrentUser(user);
-    navigate('/');
-  };
-
-  const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
-    setCurrentUser(null);
+  const handleLogout = () => {
     setShowUserMenu(false);
     addToast('You have been logged out.', 'info');
   };
@@ -83,20 +69,6 @@ export default function App() {
 
   const currentPath = window.location.pathname;
   const pageInfo = PAGE_TITLES[currentPath] || PAGE_TITLES['/'];
-
-  if (authLoading) {
-    return null;
-  }
-
-  // If user is not logged in, enforce login page
-  if (!currentUser) {
-    return (
-      <>
-        <Login onLogin={handleLogin} addToast={addToast} />
-        <Toast toasts={toasts} />
-      </>
-    );
-  }
 
   return (
     <div className="app-layout">
