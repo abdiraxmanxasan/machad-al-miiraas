@@ -38,20 +38,22 @@ const PAGE_TITLES = {
 };
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem('sms_auth_user');
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   const [toasts, setToasts] = useState([]);
   const [showNotifs, setShowNotifs] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [notifications, setNotifications] = useState(getNotifications());
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetch('/api/auth/session', { credentials: 'include' })
+      .then(response => response.ok ? response.json() : null)
+      .then(data => setCurrentUser(data?.user || null))
+      .catch(() => setCurrentUser(null))
+      .finally(() => setAuthLoading(false));
+  }, []);
 
   const addToast = useCallback((msg, type = 'success') => {
     const id = Date.now();
@@ -60,13 +62,12 @@ export default function App() {
   }, []);
 
   const handleLogin = (user) => {
-    localStorage.setItem('sms_auth_user', JSON.stringify(user));
     setCurrentUser(user);
     navigate('/');
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('sms_auth_user');
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
     setCurrentUser(null);
     setShowUserMenu(false);
     addToast('You have been logged out.', 'info');
@@ -82,6 +83,10 @@ export default function App() {
 
   const currentPath = window.location.pathname;
   const pageInfo = PAGE_TITLES[currentPath] || PAGE_TITLES['/'];
+
+  if (authLoading) {
+    return null;
+  }
 
   // If user is not logged in, enforce login page
   if (!currentUser) {
@@ -138,7 +143,7 @@ export default function App() {
               {currentUser.avatar || 'ZU'}
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ color: '#fff', fontSize: 12, fontWeight: 600 }}>{currentUser.fullName || 'Zubeer'}</div>
+              <div style={{ color: '#fff', fontSize: 12, fontWeight: 600 }}>{currentUser.fullName || currentUser.username}</div>
               <div style={{ color: 'var(--gray-500)', fontSize: 10 }}>{currentUser.role || 'Administrator'}</div>
             </div>
             <LogOut size={14} style={{ color: 'var(--gray-500)' }} />
@@ -206,7 +211,7 @@ export default function App() {
               >
                 <div className="avatar" style={{ background: '#2563eb' }}>{currentUser.avatar || 'ZU'}</div>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)' }}>{currentUser.fullName || 'Zubeer'}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)' }}>{currentUser.fullName || currentUser.username}</span>
                   <span style={{ fontSize: 11, color: 'var(--gray-400)' }}>{currentUser.role || 'Administrator'}</span>
                 </div>
                 <ChevronDown size={14} style={{ color: 'var(--gray-400)' }} />

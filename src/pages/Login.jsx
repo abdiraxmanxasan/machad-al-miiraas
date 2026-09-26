@@ -8,7 +8,7 @@ export default function Login({ onLogin, addToast }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setError('');
 
@@ -20,23 +20,25 @@ export default function Login({ onLogin, addToast }) {
 
     setLoading(true);
 
-    setTimeout(() => {
-      // Check credentials: Username Zubeer, Password Zubeer123
-      if (cleanUser.toLowerCase() === 'zubeer' && password === 'Zubeer123') {
-        const user = {
-          username: 'Zubeer',
-          fullName: 'Zubeer',
-          role: 'Administrator',
-          avatar: 'ZU',
-          loginTime: new Date().toISOString()
-        };
-        onLogin(user);
-        addToast('Welcome back, Zubeer!', 'success');
-      } else {
-        setError('Incorrect username or password. Please try again.');
-        setLoading(false);
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ username: cleanUser, password })
+      });
+
+      if (!response.ok) {
+        throw new Error('Authentication failed');
       }
-    }, 400);
+
+      const { user } = await response.json();
+      onLogin(user);
+      addToast('Welcome back.', 'success');
+    } catch {
+      setError('Incorrect username or password. Please try again.');
+      setLoading(false);
+    }
   }
 
   return (
@@ -246,25 +248,6 @@ export default function Login({ onLogin, addToast }) {
             )}
           </button>
         </form>
-
-        {/* Credentials reminder badge */}
-        <div style={{
-          marginTop: '22px',
-          padding: '12px 14px',
-          background: '#f8fafc',
-          border: '1px dashed #cbd5e1',
-          borderRadius: '10px',
-          fontSize: '12px',
-          color: '#475569',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontWeight: 600, color: '#1e293b', marginBottom: '3px' }}>
-            System Credentials:
-          </div>
-          <div>
-            Username: <strong style={{ color: '#2563eb' }}>Zubeer</strong> &nbsp;|&nbsp; Password: <strong style={{ color: '#2563eb' }}>Zubeer123</strong>
-          </div>
-        </div>
 
         {/* Footer */}
         <div style={{
